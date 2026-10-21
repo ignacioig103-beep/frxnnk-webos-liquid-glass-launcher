@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, height=1080, user-scalable=no">
+  <title>Liquid Glass</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Fondo estático: se pinta una sola vez, sin blur en vivo -->
+  <div class="bg" aria-hidden="true">
+    <div class="bg__blob bg__blob--a"></div>
+    <div class="bg__blob bg__blob--b"></div>
+    <div class="bg__blob bg__blob--c"></div>
+    <div class="bg__tint" id="bgTint"></div>
+  </div>
+
+  <header class="topbar glass">
+    <div class="topbar__brand">Liquid Glass</div>
+    <div class="topbar__right">
+      <span class="topbar__hint" id="fxHint"></span>
+      <time class="topbar__clock" id="clock">--:--</time>
+    </div>
+  </header>
+
+  <section class="hero">
+    <p class="hero__eyebrow" id="heroRow">Aplicaciones</p>
+    <h1 class="hero__title" id="heroTitle">&nbsp;</h1>
+    <p class="hero__sub" id="heroSub">&nbsp;</p>
+  </section>
+
+  <main class="rows" id="rows"></main>
+
+  <footer class="legend">
+    <span><i class="key key--ok">OK</i> Abrir</span>
+    <span><i class="key key--yellow"></i> Fijar en favoritas</span>
+    <span><i class="key key--blue"></i> Efectos de cristal</span>
+    <span><i class="key">↩</i> Salir</span>
+  </footer>
+
+  <div class="toast glass" id="toast" role="status"></div>
+
+  <script src="js/luna.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

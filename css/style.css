@@ -1,0 +1,345 @@
+/*
+ * Liquid Glass launcher para LG webOS.
+ *
+ * Reglas de rendimiento:
+ *  - Solo se animan transform y opacity (compositor, sin layout ni repaint).
+ *  - Sin backdrop-filter por defecto: el "cristal" se simula con degradados,
+ *    bordes y brillos. El blur real (modo HQ) se activa con la tecla azul y
+ *    solo si el navegador lo soporta.
+ *  - El fondo es estático; nada se anima de forma continua.
+ *  - Compatible con los Chromium antiguos de webOS 3.x/4.x (sin custom
+ *    properties en rutas críticas, sin gap en flex, sin aspect-ratio).
+ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #0b1020;
+  color: #f4f6fb;
+  font-family: "LG Smart UI", "Museo Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+/* ---------- Fondo ---------- */
+
+.bg {
+  position: fixed;
+  left: 0; top: 0;
+  width: 1920px; height: 1080px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 20% 0%, #1c2a5a 0%, #0b1020 55%) #0b1020;
+}
+
+/* Manchas de color ya "desenfocadas" con degradados radiales: mismo aspecto
+   que un blur, coste cero por frame. */
+.bg__blob {
+  position: absolute;
+  border-radius: 50%;
+  opacity: .85;
+}
+.bg__blob--a {
+  width: 1100px; height: 1100px; left: -260px; top: 380px;
+  background: radial-gradient(circle, rgba(88, 86, 214, .55) 0%, rgba(88, 86, 214, 0) 68%);
+}
+.bg__blob--b {
+  width: 1200px; height: 1200px; left: 1000px; top: -420px;
+  background: radial-gradient(circle, rgba(0, 170, 255, .40) 0%, rgba(0, 170, 255, 0) 68%);
+}
+.bg__blob--c {
+  width: 900px; height: 900px; left: 1180px; top: 560px;
+  background: radial-gradient(circle, rgba(255, 64, 129, .30) 0%, rgba(255, 64, 129, 0) 68%);
+}
+
+/* Tinte del color de la app enfocada: se cambia con un fundido de opacidad. */
+.bg__tint {
+  position: absolute;
+  left: 0; top: 0; width: 100%; height: 100%;
+  opacity: 0;
+  transition: opacity .45s ease;
+  will-change: opacity;
+}
+.bg__tint.is-on { opacity: .35; }
+
+/* ---------- Cristal ---------- */
+
+.glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .05) 100%);
+  border: 1px solid rgba(255, 255, 255, .18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .35),
+    inset 0 -1px 0 rgba(255, 255, 255, .05),
+    0 10px 30px rgba(0, 0, 0, .25);
+}
+
+/* Modo HQ: blur real solo en superficies pequeñas y estáticas. */
+.fx-hq .glass {
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, .14) 0%, rgba(255, 255, 255, .04) 100%);
+}
+
+/* ---------- Barra superior ---------- */
+
+.topbar {
+  position: absolute;
+  left: 96px; top: 48px;
+  width: 1728px; height: 72px;
+  padding: 0 32px;
+  border-radius: 36px;
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: space-between; justify-content: space-between;
+}
+.topbar__brand {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: .5px;
+  opacity: .9;
+}
+.topbar__right {
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+}
+.topbar__hint {
+  font-size: 20px;
+  opacity: .6;
+  margin-right: 28px;
+}
+.topbar__clock {
+  font-size: 34px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Hero ---------- */
+
+.hero {
+  position: absolute;
+  left: 140px; top: 190px;
+  width: 1640px;
+}
+.hero__eyebrow {
+  font-size: 22px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  opacity: .55;
+}
+.hero__title {
+  margin-top: 8px;
+  font-size: 84px;
+  font-weight: 600;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, .35);
+}
+.hero__sub {
+  margin-top: 10px;
+  font-size: 24px;
+  opacity: .5;
+}
+
+/* ---------- Filas ---------- */
+
+.rows {
+  position: absolute;
+  left: 0; top: 430px;
+  width: 1920px; height: 560px;
+  overflow: hidden;
+}
+.rows__inner {
+  position: absolute;
+  left: 0; top: 0;
+  width: 1920px;
+  transition: -webkit-transform .32s cubic-bezier(.2, .8, .2, 1);
+  transition: transform .32s cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+}
+
+.row {
+  position: absolute;
+  left: 0;
+  width: 1920px;
+  height: 270px;
+}
+.row__label {
+  position: absolute;
+  left: 140px; top: 0;
+  font-size: 24px;
+  font-weight: 600;
+  opacity: .55;
+  transition: opacity .2s ease;
+}
+.row.is-active .row__label { opacity: 1; }
+
+.row__viewport {
+  position: absolute;
+  left: 0; top: 44px;
+  width: 1920px; height: 220px;
+  overflow: hidden;
+}
+
+/* El carril se desplaza con translate3d: nunca se usa scrollLeft. */
+.row__track {
+  position: absolute;
+  left: 0; top: 0;
+  height: 220px;
+  white-space: nowrap;
+  transition: -webkit-transform .32s cubic-bezier(.2, .8, .2, 1);
+  transition: transform .32s cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+}
+
+/* ---------- Tarjetas ---------- */
+
+.tile {
+  position: absolute;
+  top: 20px;
+  width: 280px;
+  height: 170px;
+  border-radius: 28px;
+  overflow: hidden;
+  transition: -webkit-transform .22s cubic-bezier(.2, .8, .2, 1);
+  transition: transform .22s cubic-bezier(.2, .8, .2, 1);
+}
+
+.tile__bg {
+  position: absolute;
+  left: 0; top: 0; width: 100%; height: 100%;
+  opacity: .9;
+}
+
+/* Reflejo superior tipo "liquid glass": capa fija, no se repinta al enfocar. */
+.tile__shine {
+  position: absolute;
+  left: 0; top: 0; width: 100%; height: 100%;
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .28) 0%, rgba(255, 255, 255, .06) 42%, rgba(255, 255, 255, 0) 60%),
+    linear-gradient(0deg, rgba(0, 0, 0, .28) 0%, rgba(0, 0, 0, 0) 45%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .45),
+    inset 0 0 0 1px rgba(255, 255, 255, .14);
+}
+
+.tile__icon {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 96px; height: 96px;
+  margin: -62px 0 0 -48px;
+}
+.tile__mono {
+  position: absolute;
+  left: 0; right: 0; top: 34px;
+  text-align: center;
+  font-size: 58px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+.tile__label {
+  position: absolute;
+  left: 18px; right: 18px; bottom: 14px;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .5);
+}
+
+.tile__pin {
+  position: absolute;
+  right: 14px; top: 12px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #ffd60a;
+  box-shadow: 0 0 10px rgba(255, 214, 10, .8);
+}
+
+/* Foco: un único anillo por fila que se mueve con transform. El cambio de
+   foco no repinta ninguna tarjeta, solo compone capas. */
+.focus-ring {
+  position: absolute;
+  left: 0; top: 20px;
+  width: 280px; height: 170px;
+  border-radius: 30px;
+  border: 4px solid rgba(255, 255, 255, .95);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .25), 0 18px 40px rgba(0, 0, 0, .45), 0 0 36px rgba(160, 200, 255, .45);
+  opacity: 0;
+  pointer-events: none;
+  transition: -webkit-transform .22s cubic-bezier(.2, .8, .2, 1), opacity .18s ease;
+  transition: transform .22s cubic-bezier(.2, .8, .2, 1), opacity .18s ease;
+  will-change: transform, opacity;
+}
+.row.is-active .focus-ring { opacity: 1; }
+
+/* ---------- Leyenda ---------- */
+
+.legend {
+  position: absolute;
+  left: 140px; bottom: 40px;
+  font-size: 20px;
+  opacity: .6;
+}
+.legend span { margin-right: 40px; }
+.key {
+  display: inline-block;
+  vertical-align: middle;
+  min-width: 26px;
+  height: 26px;
+  line-height: 26px;
+  padding: 0 6px;
+  margin-right: 8px;
+  border-radius: 13px;
+  font-style: normal;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  background: rgba(255, 255, 255, .2);
+}
+.key--ok { background: rgba(255, 255, 255, .85); color: #0b1020; }
+.key--yellow { background: #ffd60a; }
+.key--blue { background: #0a84ff; }
+
+/* ---------- Toast ---------- */
+
+.toast {
+  position: absolute;
+  right: 96px; top: 150px;
+  width: 640px;
+  background: rgba(20, 26, 48, .88);
+  padding: 18px 28px;
+  border-radius: 24px;
+  text-align: center;
+  font-size: 24px;
+  opacity: 0;
+  -webkit-transform: translateY(-20px);
+  transform: translateY(-20px);
+  transition: opacity .25s ease, -webkit-transform .25s ease;
+  transition: opacity .25s ease, transform .25s ease;
+  pointer-events: none;
+}
+.toast.is-on {
+  opacity: 1;
+  -webkit-transform: translateY(0);
+  transform: translateY(0);
+}
+
+/* Accesibilidad / equipos lentos: sin animaciones. */
+@media (prefers-reduced-motion: reduce) {
+  .row__track, .tile, .focus-ring, .bg__tint, .toast { transition: none; }
+}
+
+/* La tarjeta enfocada se eleva junto con el anillo (misma escala y curva). */
+.row.is-active .tile.is-focused {
+  -webkit-transform: scale(1.08);
+  transform: scale(1.08);
+}
